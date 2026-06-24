@@ -2,8 +2,9 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import { signinSchema, signupSchema } from './schemas/auth';
 import dotenv from "dotenv";
-import { UserModel } from './db';
+import { ContentModel, UserModel } from './db';
 import bcrypt from "bcrypt";
+import { UserMiddleware } from './middleware';
 dotenv.config()
 
 const app = express();
@@ -60,10 +61,7 @@ app.post("/api/v1/signin", async (req,res) => {
             message: "Invalid credentials"
         })
     } 
-    const existingPassword = await bcrypt.compare(
-        password,
-        existingUser.password
-    );
+    const existingPassword = await bcrypt.compare(password,existingUser.password);
     if(!existingPassword){
         return res.status(401).json({
             message: "Invalid credentials"
@@ -77,19 +75,52 @@ app.post("/api/v1/signin", async (req,res) => {
     }
 })
 
-app.post("/api/v1/content", (req,res) => {
+app.post("/api/v1/content", UserMiddleware, async (req,res) => {
+    const title = req.body.title;
+    const link = req.body.link;
+    const type = req.body.type;
+    try{
+        await ContentModel.create({
+        title,
+        link,
+        type,
+        tags:[],
+        // @ts-ignore
+        userId: req.userId,
+    })} catch(err){
+        console.log(err)
+    }
+    res.json({
+        message:"Content Added"
+    })
+
+})
+
+app.get("/api/v1/content", UserMiddleware, async(req,res) => {
+    //@ts-ignore
+    const userId = req.userId;
+    const content = await ContentModel.find({
+        userId: userId
+    }).populate("userId","username")
+    res.json({
+        content: content
+    })
     
 
 })
 
-app.get("/api/v1/content", (req,res) => {
-    
+app.delete("/api/v1/content", UserMiddleware,async (req,res) => {
+    const contentId = req.body.contentId
 
-})
+    await ContentModel.deleteMany({
+        contentId, 
+        //@ts-ignore
+        userId: req.userId
+    })
 
-app.delete("/api/v1/content", (req,res) => {
-    
-
+    res.json({
+        message:"Deleted"
+    })
 })
 
 app.delete("/api/v1/brain/share", (req,res) => {
