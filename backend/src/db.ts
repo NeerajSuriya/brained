@@ -22,8 +22,21 @@ const ContentSchema = new Schema({
     title: String,
     link: String,
     type: String,
-    tags:[{type: mongoose.Types.ObjectId, ref: "Tag"}],
-    userId:[{type: mongoose.Types.ObjectId, ref: "User"}]
+    tags:[{type: mongoose.Types.ObjectId, ref: "Tags"}],
+    userId:{type: mongoose.Types.ObjectId, ref: "User"}
 })
 
 export const ContentModel = mongoose.model("Content",ContentSchema)
+
+const LinkSchema = new mongoose.Schema({
+    hash:{ type: String, required: true, unique: true},
+    userId:{type: mongoose.Types.ObjectId, ref: "User", required: true, unique: true}
+})
+
+export const LinkModel = mongoose.model("Link", LinkSchema)
+
+const TagsSchema = new mongoose.Schema({
+    type: String
+})
+
+export const TagsModel = mongoose.model("Tags", TagsSchema) 

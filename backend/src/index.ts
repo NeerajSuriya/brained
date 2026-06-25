@@ -2,15 +2,16 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import { signinSchema, signupSchema } from './schemas/auth';
 import dotenv from "dotenv";
-import { ContentModel, UserModel } from './db';
+import { ContentModel, LinkModel, UserModel, TagsModel } from './db';
 import bcrypt from "bcrypt";
+import crypto from "crypto"
 import { UserMiddleware } from './middleware';
 dotenv.config()
 
 const app = express();
 app.use(express.json())
 
-app.post("/api/v1/signup", async (req,res) => { //zod, hash, status codes
+app.post("/api/v1/signup", async (req,res) => { 
     const parsed = signupSchema.safeParse(req.body)
     console.log(parsed)
 
@@ -123,13 +124,49 @@ app.delete("/api/v1/content", UserMiddleware,async (req,res) => {
     })
 })
 
-app.delete("/api/v1/brain/share", (req,res) => {
+app.post("/api/v1/brain/share", UserMiddleware,async (req,res) => {
     
+    const existingLink = await LinkModel.findOne({
+        //@ts-ignore
+        userId: req.userId
+    })
 
+    if (existingLink){
+        return res.json({
+            hash: existingLink.hash
+        })
+    }
+
+    const hash = crypto.randomBytes(10).toString("hex");
+
+    const link = await LinkModel.create({
+        hash,
+        //@ts-ignore
+        userId: req.userId
+    });
+
+    res.json({
+        hash: link.hash
+    })
 })
 
-app.get("/api/v1/brain/:sharelink", (req,res) => {
-    
+app.get("/api/v1/brain/:sharelink", async (req,res) => {
+    const hash = req.params.sharelink
+    const link = await LinkModel.findOne({ hash })
+
+    if(!link){
+        return res.status(404).json({
+            message:"Share Link not found"
+        })
+    }
+
+    const content = await ContentModel.find({
+        userId: link.userId
+    }).populate("tags")
+
+    res.json({
+        content
+    })
 
 })
 
