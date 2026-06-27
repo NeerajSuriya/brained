@@ -14,7 +14,7 @@ const variantStyles = {
     "secondary": "bg-purple-300 text-purple-600"
 }
 
-const defaultStyles = " m-1 rounded-md flex"
+const defaultStyles = " m-1 rounded-md flex items-center"
 
 const sizeStyles = {
     "sm": "py-1 px-3",
